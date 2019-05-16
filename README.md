@@ -35,13 +35,11 @@ The following restrictions apply:
 • the maximum number of children of a node is 1024.
 
 The program receives one of the following commands for each line of the journal file
-given as input, where hpercorsoi indicates a generic path and hnomei a string
-alphanumeric of up to 255 characters.
+given as input, where (path) indicates a generic path and (name) an alphanumeric string of up to 255 characters.
 
 • create (path): The command has the effect of creating a file
 empty, or without associated data, inside the filesystem. Print in
-output the "ok" result if the file was created regularly, "no" if the creation of the file was not successful (for example, if you try to create
-a file in a non-existent directory, or if the filesystem limits are exceeded).
+output the "ok" result if the file was created regularly, "no" if the creation of the file was not successful (for example, if you try to create a file in a non-existent directory, or if the filesystem limits are exceeded).
 
 • create dir (path): Create an empty directory inside the filesystem. Print the outcome "ok" if the directory has been created
 regularly, "no" if the creation was not successful.
@@ -50,12 +48,7 @@ regularly, "no" if the creation was not successful.
 output "content" followed by a space character and the contents of the file
 if the file exists or prints "no" if the file does not exist.
 
-• write (path) (content): Writes the contents of a file,
-that must already exist (if the file already had content, it is overwritten); output "ok" followed by the number of characters written
-if the writing is successful, "no" otherwise. The parameter
-(content) has the form of a sequence of alphanumeric characters and spaces
-delimited by double quotes. Example:
-write / poems / jabberwocky "It was brillig and the slithy toves"
+• write (path) (content): Writes the contents of a file, that must already exist (if the file already had content, it is overwritten); output "ok" followed by the number of characters written if the writing is successful, "no" otherwise. The parameter (content) has the form of a sequence of alphanumeric characters and spaces delimited by double quotes. Example: write / poems / jabberwocky "It was brillig and the slithy toves"
 
 • delete (path): Delete a resource, print the result ("ok" -
 "no"). A resource is erasable only when it has no children.
