@@ -2,8 +2,8 @@
 
 #define N 255                  //lunghezza nomi
 #define H 255                 //altezza massima
-#define F 1024                //massimi figli
-#define C 10                //massima lunghezza di un comando
+#define F 1023                //massimi figli
+#define C 11                //massima lunghezza di un comando
 #define P 65035              //massima lunghezza percorso+comando
 #define R 70000               //massima lunghezza riga
 
@@ -24,7 +24,8 @@ typedef struct file {
 
 typedef struct struttura_percorso{
     struct struttura_percorso *successivo,*precedente;
-    char strada[P];
+    char *strada;
+    int max_strada;
 } t_percorso;
 
 
@@ -40,99 +41,70 @@ void Write (char[],char[]);
 void Find (char []);
 void CancellaFigli (t_directory *);
 void CercaNodi (t_directory *,char[]);
-void ConcatenaStringhe (char[]);
-void OrdinaStampaStrada();
+void ScriviStrada (char[]);
+void StampaStrada();
 int OrdinaStringhe(char [],char []);
 
 
 t_directory radice;
-t_percorso primo;
+t_percorso testa_find;
 t_percorso *attuale;
 int trovati;
 
 
 int main(){
-    char c,*str;        //acquisizione
-    char d,*percorso;       //percorso
-    char comando[C],/*percorso[P],*/contenuto[N];
+    char riga[R];
+    char comando[C],percorso[P],contenuto[N];
     char ris;
-    int i,j;        //contatori for
-    int g,k;        //gestione acquisizione
-    int m,n;        //gestione percorso
+    int i,j,err;
     radice.name[0]='\0';
     radice.figli_f=0;
     radice.figli_d=0;
-    g=10;
-    k=0;
-    scanf("%c",&c);
-    str = (char*)malloc(g);
-    while(c!='\n'){
-        if(k<g){
-            *(str+k)=c;
+    gets(riga);
+    while (ComparaStringhe(riga,"exit")==0){
+        err=0;
+        for (i=0;riga[i]!=' ' && riga[i]!='\0' && i<C;i++) {
+            comando[i]=riga[i];
         }
-        else{
-            g=g+10;
-            str=(char*)realloc(str,g);
-            *(str+k)=c;
-        }
-        scanf("%c",&c);
-        k++;
-    }
-    *(str+k)='\0';
-
-    m=10;
-    n=0;
-    percorso = (char*)malloc(m);
-
-    while (ComparaStringhe(str,"exit")==0){
-        for (i=0;str[i]!=' ';i++) {                                    //prende il comando
-            comando[i]=str[i];
+        if(i==C){
+            err=1;
         }
         comando[i]='\0';
-        while (str[i]==' '){                                           //va fino al primo non spazio dopo al comando
+        while (riga[i]==' '){                                           //va fino al primo non spazio dopo al comando
             i++;
         }
-        for (n=0;str[i]!='\0'&&str[i]!=' ';i++){                           //prende il percorso  o nome nel caso di find
-            if(n<m){
-                percorso[n]=str[i];
-            }
-            else{
-                m=m+10;
-                percorso = (char*)realloc(percorso,m);
-                percorso[n]=str[i];
-            }
-            n++;
+        j=0;
+        if(riga[i]=='\0'){
+            err=1;
         }
-        percorso[n]='\0';
+        for ( ;riga[i]!='\0'&&riga[i]!=' ';i++){                           //prende il percorso  o nome nel caso di find
+            percorso[j]=riga[i];
+            j++;
+        }
+        percorso[j]='\0';
         if (ComparaStringhe(comando,"write")){                                          //prende il contenuto in caso di write
             j=0;
-            while (str[i]==' '||str[i]=='"' || i>=R)
+            while (riga[i]==' ')
                 i++;
-            for( ;str[i]!='"' || i>=R;i++){
-                contenuto[j]=str[i];
+            if(riga[i]!='\0')
+                i++;
+            for( ;riga[i]!='"' && riga[i]!='\0';i++){
+                contenuto[j]=riga[i];
                 j++;
+            }
+            if(riga[i]=='\0'){
+                err=1;
             }
             contenuto[j]='\0';
         }
-        IdentificaComando(comando,percorso,contenuto);
-        k=0;
-        scanf("%c",&c);
-        while(c!='\n'){
-            if(k<g){
-                *(str+k)=c;
-            }
-            else{
-                g=g+10;
-                str=(char*)realloc(str,g);
-                *(str+k)=c;
-            }
-            scanf("%c",&c);
-            k++;
+        if(err==0){
+            IdentificaComando(comando,percorso,contenuto);
         }
-        *(str+k)='\0';
+        else
+            printf("no\n");
+
+        gets(riga);
     }
-    for(i=0;i<g;i++)
-        free(str+i);
     return 0;
 }
 
@@ -166,6 +138,7 @@ void IdentificaComando (char comando[],char percorso[],char contenuto[]){
         Find(percorso);
         return ;
     }
+    printf("no\n");
     return  ;
 }
 
@@ -177,7 +150,7 @@ void Create(char percorso[]){
     padre=&radice;
     i=0;
     j=0;
-    h=0;
+    h=1;
     do{
         k=0;
         for(i=i+1; percorso[i]!='/' && percorso[i]!='\0'; i++){
@@ -198,8 +171,12 @@ void Create(char percorso[]){
             }
         }
         h++;
-    } while (percorso[i]=='/' && h<254);
-    if(padre->figli_f + padre->figli_d < F){
+    } while (percorso[i]=='/' && h<255);
+    if(percorso[i]!='\0'){
+        printf("no\n");
+        return ;
+    }
+    if(padre->figli_f + padre->figli_d <= F){
 
         for(i=0; i<padre->figli_d; i++){
             if(ComparaStringhe(padre->figlio_d[i]->name,nodo)==1)
@@ -219,7 +196,7 @@ void Create(char percorso[]){
         }
 
         j=padre->figli_f;
-        padre->figlio_f[j]=(t_directory*) malloc (sizeof(t_file) * 1);
+        padre->figlio_f[j]=(t_file*) malloc (sizeof(t_file) * 1);
         CopiaStringa(padre->figlio_f[j]->name,nodo);
         padre->figlio_f[j]->data[0]='\0';
         padre->figli_f ++;
@@ -239,7 +216,7 @@ void Create_dir(char percorso[]){
     padre=&radice;
     i=0;
     j=0;
-    h=0;
+    h=1;
     do{
         k=0;
         for(i=i+1; percorso[i]!='/' && percorso[i]!='\0'; i++){
@@ -260,8 +237,12 @@ void Create_dir(char percorso[]){
             }
         }
         h++;
-    } while (percorso[i]=='/' && h<254);
-    if(padre->figli_f + padre->figli_d < F){
+    } while (percorso[i]=='/' && h<255);
+    if(percorso[i]!='\0'){
+        printf("no\n");
+        return ;
+    }
+    if(padre->figli_f + padre->figli_d <= F){
 
 
             for(i=0; i<padre->figli_d  ; i++){
@@ -394,6 +375,7 @@ void Delete_r(char percorso[]){
             if(j<padre->figli_f){
                 supporto=padre->figlio_f[j];
                 padre->figlio_f[j]=padre->figlio_f[padre->figli_f-1];
+                padre->figli_f=padre->figli_f -1;
                 free(supporto);
                 printf("ok\n");
                 return ;
@@ -404,6 +386,7 @@ void Delete_r(char percorso[]){
     } while (percorso[i]=='/');
     supporto=padre->figlio_d[j];
     padre->figlio_d[j]=padre->figlio_d[padre->figli_d-1];
+    padre->figli_d = padre->figli_d-1;
     CancellaFigli(supporto);
     printf ("ok\n");
     return ;
@@ -499,18 +482,15 @@ void Write (char percorso[],char contenuto[]){
 
 void Find (char nome[]){
     int i;
-    attuale=&primo;
-    attuale->strada[0]='\0';
     trovati=0;
     CercaNodi(&radice,nome);
     if (trovati >0){
-        OrdinaStampaStrada();
+        StampaStrada();
         return ;
     }
     printf ("no\n");
     return ;
  }
-
 
 int ComparaStringhe (char str1[],char str2[]){
     int i;
@@ -535,11 +515,8 @@ int CopiaStringa (char str1[],char str2[]){
 
 void CancellaFigli(t_directory *nodo){
     int i;
-    t_directory *supporto;
     for(i=0;i<nodo->figli_f;i++){
-        supporto=nodo->figlio_f[i];
-        nodo->figlio_f[i]=nodo->figlio_f[nodo->figli_f-1];
-        free(supporto);
+        free(nodo->figlio_f[i]);
     }
     for(i=0;i<nodo->figli_d;i++){
         CancellaFigli(nodo->figlio_d[i]);
@@ -550,86 +527,132 @@ void CancellaFigli(t_directory *nodo){
 
 
 void CercaNodi(t_directory *nodo,char nome[]){
-    int i;
+    int i,j,ordinato;
     t_directory *comodo;
+    t_percorso *comodo2,*comodo3;
     for(i=0;i<nodo->figli_f;i++){
-        if(ComparaStringhe(nodo->figlio_f[i]->name,nome)==1){
-            trovati ++;
-            ConcatenaStringhe(nodo->figlio_f[i]->name);
-            comodo=nodo;
-            while (comodo->name[0]!='\0'){
-                ConcatenaStringhe(comodo->name);
-                comodo=comodo->padre;
-            }
-            attuale->successivo=(t_percorso*) malloc (sizeof(t_percorso) * 1);
-            attuale->successivo->precedente=attuale;
-            attuale=attuale->successivo;
-            attuale->strada[0]='\0';
+            if(ComparaStringhe(nodo->figlio_f[i]->name,nome)==1){
+                    ordinato=0;
+                attuale=(t_percorso*) malloc (sizeof(t_percorso) * 1);
+                attuale->strada=(char*)malloc(1);
+                attuale->strada[0]='\0';
+                attuale->max_strada=0;
+                ScriviStrada(nodo->figlio_f[i]->name);
+                comodo=nodo;
+                while (comodo->name[0]!='\0'){
+                    ScriviStrada(comodo->name);
+                    comodo=comodo->padre;
+                }
+                if(trovati==0){
+                    (&testa_find)->successivo=attuale;
+                    attuale->precedente=&testa_find;
+                    trovati ++;
+                }
+                else{
+                    comodo3=(&testa_find)->successivo;
+                    for(j=0;j<trovati;j++){
+                        if(OrdinaStringhe(attuale->strada,comodo3->strada)==1){
+                            ordinato=1;
+                            break ;
+                        }
+                        if(j==trovati-1)
+                            break ;
+                        comodo3=comodo3->successivo;
+                    }
+                    comodo2=comodo3->precedente;
+                    if(ordinato==1){
+                        comodo2->successivo=attuale;
+                        comodo3->precedente=attuale;
+                        attuale->precedente=comodo2;
+                        attuale->successivo=comodo3;
+                    }
+                    else{
+                        comodo3->successivo=attuale;
+                        attuale->precedente=comodo3;
+                    }
+                    trovati ++;
+                }
         }
     }
     for(i=0;i<nodo->figli_d;i++){
             if(ComparaStringhe(nodo->figlio_d[i]->name,nome)==1){
-                trovati ++;
-                ConcatenaStringhe(nodo->figlio_d[i]->name);
+                attuale=(t_percorso*) malloc (sizeof(t_percorso) * 1);
+                attuale->strada=(char*)malloc(1);
+                attuale->strada[0]='\0';
+                attuale->max_strada=0;
+                ScriviStrada(nodo->figlio_d[i]->name);
                 comodo=nodo;
                 while (comodo->name[0]!='\0'){
-                    ConcatenaStringhe(comodo->name);
+                    ScriviStrada(comodo->name);
                     comodo=comodo->padre;
                 }
-                attuale->successivo=(t_percorso*) malloc (sizeof(t_percorso) * 1);
-                attuale->successivo->precedente=attuale;
-                attuale=attuale->successivo;
-                attuale->strada[0]='\0';
+                if(trovati==0){
+                    (&testa_find)->successivo=attuale;
+                    attuale->precedente=&testa_find;
+                    trovati ++;
+                }
+                else{
+                    comodo3=(&testa_find)->successivo;
+                    for(j=0;j<trovati;j++){
+                        if(OrdinaStringhe(attuale->strada,comodo3->strada)==1){
+                            ordinato=1;
+                            break ;
+                        }
+                        if(j==trovati-1)
+                            break ;
+                        comodo3=comodo3->successivo;
+                    }
+                    comodo2=comodo3->precedente;
+                    if(ordinato==1){
+                        comodo2->successivo=attuale;
+                        comodo3->precedente=attuale;
+                        attuale->precedente=comodo2;
+                        attuale->successivo=comodo3;
+                    }
+                    else{
+                        comodo3->successivo=attuale;
+                        attuale->precedente=comodo3;
+                    }
+                    trovati ++;
+                }
             }
             CercaNodi(nodo->figlio_d[i],nome);
     }
     return ;
 }
 
- void ConcatenaStringhe(char nodo []){
-     int i,j;
-     for(j=0;nodo[j]!='\0';j++){
-            ;
-     }
-     for(i=0;attuale->strada[i]!='\0';i++)
-            ;
-     for(;i>=0;i--){
+void ScriviStrada(char nodo []){
+    int i,j;
+    for(j=0;nodo[j]!='\0';j++){
+        ;
+    }
+    i=attuale->max_strada;
+    attuale->max_strada=attuale->max_strada+j+1;
+    attuale->strada = (char*)realloc (attuale->strada,attuale->max_strada+1);
+    for(;i>=0;i--){
         attuale->strada[i+j+1]=attuale->strada[i];
-     }
-     attuale->strada[i+j]='\0';
-     attuale->strada[0]='/' ;
-     for(i=0;i<j;i++){
-            attuale->strada[i+1]=nodo[i];
-     }
-     return ;
+    }
+    attuale->strada[0]='/' ;
+    for(i=0;i<j;i++){
+        attuale->strada[i+1]=nodo[i];
+    }
+    return ;
  }
 
-void OrdinaStampaStrada(){
-    int i,j;
-    t_percorso *min,*supporto,*locale;
-    for(i=0;i<trovati-1;i++){
-        min=&primo;
-        locale=(&primo)->successivo;
-        supporto=&primo;
-        for (j=i;j<trovati-1;j++){
-            if(OrdinaStringhe(min->strada,locale->strada)==0){
-                min=locale;
-            }
-            locale=locale->successivo;
-        }
-        printf("ok %s\n",min->strada);
-        if(min!=supporto){
-            min->precedente->successivo=min->successivo;
-            free (min);
-        }
-        else{
-            supporto=supporto->successivo;
-            free(&primo);
-            primo=*supporto;
-        }
+void StampaStrada(){
+    t_percorso *candidato,*supporto;
+    int i;
+    candidato=(&testa_find)->successivo;
+    for(i=1;i<trovati;i++){
+        printf("ok %s\n",candidato->strada);
+        supporto=candidato;
+        candidato=candidato->successivo;
+        free(supporto->strada);
+        free(supporto);
     }
-    printf("ok %s\n",(&primo)->strada);
-    free(&primo);
+    printf("ok %s\n",candidato->strada);
+    free(candidato->strada);
+    free(candidato);
     return ;
 }
 
